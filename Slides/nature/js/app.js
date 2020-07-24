@@ -1,3 +1,19 @@
+debounce = function(func, wait, immediate) {
+    var timeout;
+    return function() {
+        var context = this,
+            args = arguments;
+        var later = function() {
+            timeout = null;
+            if (!immediate) func.apply(context, args);
+        };
+        var callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func.apply(context, args);
+    };
+};
+
 $('[data-group]').each(function() {
     var $allTarget = $(this).find('[data-target]'),
         $allClick = $(this).find('[data-click]'),
@@ -44,14 +60,14 @@ $('section').each(function() {
         id = $(this).attr('id'),
         $itemMenu = $('a[href="#' + id + '"]');
 
-    $(window).scroll(function() {
+    $(window).scroll(debounce(function() {
         var scrollTop = $(window).scrollTop();
         if (offsetTop - menuHeight < scrollTop && offsetTop + height - menuHeight > scrollTop) {
             $itemMenu.addClass('active');
         } else {
             $itemMenu.removeClass('active');
         }
-    });
+    }, 200));
 });
 
 
@@ -60,30 +76,54 @@ $('.mobile-btn').click(function() {
     $('.mobile-menu').toggleClass('active');
 });
 
-function slider(sliderName, velocidade) {
+(function() {
+    function slider(sliderName, velocidade) {
 
-    var sliderClass = '.' + sliderName;
-    var activeClass = 'active';
-    var rotate = setInterval(rotateSlide, velocidade);
+        var sliderClass = '.' + sliderName;
+        var activeClass = 'active';
+        var rotate = setInterval(rotateSlide, velocidade);
 
-    $(sliderClass + ' > :first').addClass(activeClass);
+        $(sliderClass + ' > :first').addClass(activeClass);
 
-    $(sliderClass).hover(function() {
-        clearInterval(rotate);
-    }, function() {
-        rotate = setInterval(rotateSlide, velocidade);
-    });
+        $(sliderClass).hover(function() {
+            clearInterval(rotate);
+        }, function() {
+            rotate = setInterval(rotateSlide, velocidade);
+        });
 
-    function rotateSlide() {
-        var activeSlide = $(sliderClass + ' > .' + activeClass);
-        var nextSlide = activeSlide.next();
+        function rotateSlide() {
+            var activeSlide = $(sliderClass + ' > .' + activeClass);
+            var nextSlide = activeSlide.next();
 
-        if (nextSlide.length == 0) {
-            nextSlide = $(sliderClass + ' > :first');
+            if (nextSlide.length == 0) {
+                nextSlide = $(sliderClass + ' > :first');
+            }
+            activeSlide.removeClass(activeClass);
+            nextSlide.addClass(activeClass);
         }
-        activeSlide.removeClass(activeClass);
-        nextSlide.addClass(activeClass);
     }
-}
 
-slider('introducao', 2000);
+    slider('introducao', 2000);
+})();
+
+(function() {
+    var $target = $('[data-anime="scroll"]')
+    var animationClass = 'animate';
+    var offset = $(window).height() * 3 / 4;
+
+    function animeScroll() {
+        var documentTop = $(window).scrollTop();
+        $target.each(function() {
+            var itemTop = $(this).offset().top;
+            if (documentTop > itemTop - offset) {
+                $(this).addClass(animationClass);
+            } else {
+                $(this).removeClass(animationClass);
+            }
+        });
+    }
+
+    $(document).scroll(debounce(function() {
+        animeScroll();
+    }, 200));
+})();
